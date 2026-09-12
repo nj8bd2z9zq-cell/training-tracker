@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#12151a">
+<title>52-Week Tracker</title>
+<style>
+:root{
+  --bg:#12151a; --panel:#1a1f27; --panel2:#222834; --line:#2e3642;
+  --ink:#e8ecf2; --dim:#98a3b3; --accent:#6fb1ff; --good:#4fc78a;
+  --warn:#e8b04b; --bad:#e8695b; --sp:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.wrap{max-width:760px;margin:0 auto;padding:0 var(--sp) 120px}
+header{position:sticky;top:0;z-index:20;background:rgba(18,21,26,.94);
+  backdrop-filter:saturate(160%) blur(12px);-webkit-backdrop-filter:saturate(160%) blur(12px);
+  border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.hd{max-width:760px;margin:0 auto;padding:10px var(--sp)}
+.hdrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+h1{font-size:15px;margin:0;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.meta{font-size:13px;color:var(--dim)}
+.days{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.day{flex:0 0 auto;min-width:52px;padding:8px 6px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);text-align:center;font-size:12px;color:var(--dim);cursor:pointer}
+.day b{display:block;font-size:15px;color:var(--ink);font-weight:600}
+.day.on{border-color:var(--accent);background:#1d2a3d}
+.day.on b{color:var(--accent)}
+.day.rest b{color:var(--dim)}
+.day.done::after{content:"●";display:block;font-size:9px;color:var(--good);line-height:1}
+h2{font-size:19px;margin:22px 0 4px}
+.sub{color:var(--dim);font-size:14px;margin:0 0 14px}
+.blk{margin:22px 0 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.ex{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.ex.done{border-color:#33553f;background:#18251d}
+.exhd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.exn{font-weight:600;flex:1}
+.tag{font-size:10px;letter-spacing:.08em;background:#2b3a52;color:var(--accent);
+  padding:2px 6px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.rx{font-variant-numeric:tabular-nums;color:var(--ink);font-size:15px;margin-top:2px}
+.rx small{color:var(--dim);font-size:13px}
+.note{color:var(--dim);font-size:14px;margin-top:8px;display:none}
+.note.show{display:block}
+.row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.sets{display:flex;gap:8px}
+.set{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);
+  color:var(--dim);font-size:15px;font-weight:600;cursor:pointer}
+.set.on{background:var(--good);border-color:var(--good);color:#0d1a13}
+.mini{background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+  padding:7px 10px;font-size:13px;cursor:pointer}
+.mini.on{border-color:var(--accent);color:var(--accent)}
+.qual{display:flex;gap:6px;margin-top:10px}
+.qual button{flex:1;padding:9px 4px;font-size:13px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--dim);cursor:pointer}
+.qual button.on[data-q="silent"]{background:#1d3a2b;border-color:var(--good);color:var(--good)}
+.qual button.on[data-q="ok"]{background:#3a3220;border-color:var(--warn);color:var(--warn)}
+.qual button.on[data-q="noisy"]{background:#3b2320;border-color:var(--bad);color:var(--bad)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+.card h3{margin:0 0 6px;font-size:16px}
+.card p{margin:0 0 12px;color:var(--dim);font-size:14px}
+.alert{border-left:3px solid var(--warn);background:#241f14;padding:12px 14px;border-radius:8px;
+  font-size:14px;margin:12px 0}
+.alert.bad{border-color:var(--bad);background:#2a1a18}
+.alert.good{border-color:var(--good);background:#16241c}
+.btn{display:inline-block;border:none;border-radius:10px;padding:13px 18px;font-size:15px;
+  font-weight:600;cursor:pointer;background:var(--accent);color:#0a1522}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.btn.wide{display:block;width:100%;margin-top:10px}
+.yn{display:flex;gap:8px;margin-top:8px}
+.yn button{flex:1;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);
+  color:var(--dim);font-size:14px;cursor:pointer}
+.yn button.on{border-color:var(--accent);color:var(--accent);background:#1d2a3d}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  background:rgba(18,21,26,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:none;color:var(--dim);font-size:11px;padding:10px 2px 12px;
+  cursor:pointer;letter-spacing:.03em}
+nav button span{display:block;font-size:18px;line-height:1.3}
+nav button.on{color:var(--accent)}
+.lg{font-size:13px;color:var(--dim);border-bottom:1px solid var(--line);padding:10px 0}
+.lg b{color:var(--ink)}
+table.hist{width:100%;border-collapse:collapse;font-size:14px}
+table.hist td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.hist td:last-child{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.hide{display:none}
+.pass{color:var(--good)} .hold{color:var(--warn)}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:40px;height:40px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--ink);font-size:19px;cursor:pointer}
+.stepper span{font-variant-numeric:tabular-nums;min-width:70px;text-align:center}
+textarea{width:100%;min-height:90px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;padding:10px;font:13px/1.4 ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="hdrow"><h1>52-Week Tracker</h1><div class="meta" id="meta"></div></div>
+  <div class="days" id="days"></div>
+</div></header>
+<div class="wrap" id="view"></div>
+<nav>
+  <button data-t="train" class="on"><span>▣</span>Train</button>
+  <button data-t="test"><span>◎</span>Test</button>
+  <button data-t="log"><span>≡</span>Log</button>
+  <button data-t="data"><span>⚙</span>Data</button>
+</nav>
+<script>
+const PROGRAM=[{"p":1,"w":[1,8],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"Standing on one leg, trace the largest controlled circle the hip allows.","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"Knees wide, rocking back and forth to open the adductors and hip socket.","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Knee drives over the toes toward a wall, heel flat. Builds dorsiflexion for depth and landings.","new":false},{"b":"Plyo","n":"Line Hops","s":"2 × 20s","c":"","note":"Small, fast two-footed hops over a line, forward-back then side-to-side.","new":true},{"b":"Plyo","n":"Box Step-Down Stick Landings","s":"2 × 6 e/s","c":"","note":"Step off the 12\" box, land on both feet, stick a silent 3-count.","new":false},{"b":"Plyo","n":"Pogo Hops","s":"2 × 15","c":"","note":"Ankle-only bounces, minimal knee bend, minimal ground-contact time.","new":false},{"b":"Plyo","n":"Squat Jump to Box","s":"2 × 5","c":"","note":"Quarter-squat countermovement jump onto a 12–16\" box. Stick the landing, step down.","new":false},{"b":"Strength","n":"Single-Leg Squats","s":"2 × 10 e/s","c":"15 reps","note":"Control the descent. Light bar assistance if balance fails.","new":false},{"b":"Strength","n":"Bulgarian Split Squats","s":"2 × 10 e/s","c":"15 reps","note":"Rear foot on a bench. Keep the front shin vertical.","new":false},{"b":"Strength","n":"Cossack Squats","s":"2 × 10 e/s","c":"15 reps","note":"Stay low while transitioning side to side; the working heel stays flat.","new":false},{"b":"Strength","n":"Single-Leg RDL","s":"2 × 8 e/s","c":"12 reps","note":"The hinge: hip-back bow on one leg, flat back, glutes finish the rep.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"2 × 8","c":"15 reps","note":"Heels on sliders or a towel, hips bridged; slide out, drag back. Hips never drop.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"2 × 10 e/s","c":"15 reps","note":"Shoulders on the bench; full lockout with a one-second squeeze.","new":false},{"b":"Strength","n":"Horse Stance Hold","s":"2 × 20s","c":"40s","note":"Feet double shoulder-width, thighs parallel, spine vertical.","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"2 × 10","c":"20 reps","note":"Calf raises and front toe raises for ankle health and balance.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"2 × 20s","c":"40s","note":"Drive through the heels to a straight knee-to-shoulder line; squeeze, ribs down.","new":false},{"b":"Core","n":"Superman","s":"2 × 20s","c":"40s","note":"Face down, lifting chest and thighs. Focus on the mid-back, not the lower back.","new":false},{"b":"Core","n":"Plank / Side Plank","s":"2 × 20s","c":"40s","note":"Tailbone tucked, glutes squeezed. Alternate the standard and side plank.","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"2 × 20s e/s","c":"40s","note":"Hold a weight at one side, stand tall, resist leaning toward it. Backpack or jug works.","new":false}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"Dynamic wrist circles and A-Frame transitions to lubricate the wrist and shoulder capsules.","new":false},{"b":"Mobility","n":"Strength Side Cat Stretch","s":"2 × 60s","c":"","note":"Segment the spine slowly, arching and rounding for thoracic extension.","new":false},{"b":"Strength","n":"Staggered Push-Ups","s":"2 × 10","c":"20 reps","note":"One hand high, one low; switch each set. Hips and shoulders stay square.","new":false},{"b":"Strength","n":"Decline Push-Ups","s":"2 × 10","c":"20 reps","note":"Feet elevated on a bench. Deep stretch at the bottom of each rep.","new":false},{"b":"Strength","n":"Shoulder Tap Push-Ups","s":"2 × 10","c":"20 reps","note":"At the top of each rep, tap the opposite shoulder without letting the hips rotate.","new":false},{"b":"Strength","n":"Standard Push-Ups","s":"2 × 10","c":"20 reps","note":"Hands on parallettes for deeper range. A burnout with clean hollow-body form.","new":false},{"b":"Strength","n":"Pull-Ups","s":"2 × 2","c":"8 reps","note":"The vertical pull. Use band assistance or negatives if needed.","new":false},{"b":"Strength","n":"Inverted Rows","s":"2 × 5","c":"12 reps","note":"The horizontal pull. Body straight under a bar, chest to the bar, shoulder blades pinned.","new":true},{"b":"Strength","n":"Dips","s":"2 × 5","c":"12 reps","note":"Parallel bars or a sturdy bench. Controlled descent, full lockout at the top.","new":false},{"b":"Core","n":"Hollow Hold","s":"2 × 20s","c":"40s","note":"Lower back pressed flat, arms and legs extended and hovering.","new":false},{"b":"Core","n":"Dead Bug Hold","s":"2 × 20s e/s","c":"40s","note":"Lower back pinned flat; extend the opposite arm and leg and hold without arching.","new":false},{"b":"Core","n":"Bird Dog Hold","s":"2 × 20s e/s","c":"40s","note":"From all fours, extend the opposite arm and leg level with the torso; hold square.","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"2 × 20s","c":"40s","note":"Hands under shoulders, knees hovering an inch off the floor, back flat as a table.","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 45s","c":"","note":"Kneeling, elbows on a bench, chest sinking to open lats and triceps.","new":false}]}},{"p":2,"w":[9,16],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Continue; move the foot back as the wall touch becomes easy.","new":false},{"b":"Plyo","n":"Line Hops","s":"carried","c":"","note":"Continue; speed and rhythm improve, amplitude stays small.","new":false},{"b":"Plyo","n":"Squat Jumps","s":"2 × 5","c":"","note":"Free vertical jump from a quarter squat, landing on the floor. Sub-maximal, silent.","new":true},{"b":"Plyo","n":"Broad Jumps","s":"2 × 5","c":"","note":"Explode forward horizontally, land in a soft athletic stance. Mark the distance; reset fully.","new":false},{"b":"Plyo","n":"Split Squat Jumps","s":"2 × 6 total","c":"","note":"Low 4–6\" air, switch feet, land softly with equal weight distribution.","new":false},{"b":"Plyo","n":"Box Jumps","s":"2 × 5","c":"","note":"Raise the jump target to 18–20\" only if Phase 1 landings stayed clean and silent.","new":false},{"b":"Plyo","n":"Seated Box Jumps","s":"2 × 4","c":"","note":"From a dead seated start with no rock-back, explode straight up onto the box.","new":true},{"b":"Strength","n":"Single-Leg Squats","s":"carried","c":"15 reps","note":"Reduce assistance; apply the tempo rule once owned.","new":false},{"b":"Strength","n":"Bulgarian Split Squats","s":"carried","c":"15 reps","note":"Apply the tempo rule: 4-second descent, 2-second pause.","new":false},{"b":"Strength","n":"Cossack Squats","s":"carried","c":"15 reps","note":"The working heel stays flat on the floor at the bottom.","new":false},{"b":"Strength","n":"Shrimp Squat Progressions","s":"2 × 8 e/s","c":"12 reps","note":"Non-working leg bent behind, lower slowly. Use a wall or bar for assistance.","new":true},{"b":"Strength","n":"Single-Leg RDL","s":"carried","c":"12 reps","note":"Continue; deepen the reach as control allows.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"carried","c":"15 reps","note":"Continue; lengthen the slide as the hamstrings strengthen.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"carried","c":"15 reps","note":"Continue; make the one-second lockout squeeze honest.","new":false},{"b":"Strength","n":"High Step-Ups (Slow Eccentric)","s":"2 × 8 e/s","c":"12 reps","note":"Knee-height box; drive up without pushing off the rear leg, lower on a 4–5 second count.","new":true},{"b":"Strength","n":"Horse Stance Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"carried","c":"20 reps","note":"Continue building lower-leg volume.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Superman","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Plank / Side Plank","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"L-Sit Practice","s":"2 × 10s","c":"40s","note":"On parallettes or the floor. Compress the hips, extend the legs forward; tuck the knees if needed.","new":true}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"","new":false},{"b":"Mobility","n":"Strength Side Cat Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Strength","n":"Staggered Push-Ups","s":"carried","c":"20 reps","note":"Continue progressing range and reps.","new":false},{"b":"Strength","n":"Decline Push-Ups","s":"carried","c":"20 reps","note":"Increase bench height if form allows the deeper position.","new":false},{"b":"Strength","n":"Shoulder Tap Push-Ups","s":"carried","c":"20 reps","note":"Slow the tap; pause briefly with the hand off the floor.","new":false},{"b":"Strength","n":"Pseudo Planche Leans","s":"2 × 10","c":"20 reps","note":"Hands by the hips, shoulders leaning forward past the fingertips, shoulder blades protracted.","new":true},{"b":"Strength","n":"Standard Push-Ups","s":"carried","c":"20 reps","note":"Continue as the pressing burnout with clean hollow-body form.","new":false},{"b":"Strength","n":"Pull-Ups","s":"carried","c":"8 reps","note":"Continue building reps; reduce band assistance as strength allows.","new":false},{"b":"Strength","n":"Inverted Rows","s":"carried","c":"12 reps","note":"Continue; lower the bar or walk the feet out as the reps come easily.","new":false},{"b":"Strength","n":"Dips","s":"carried","c":"12 reps","note":"Continue progressing reps and depth.","new":false},{"b":"Core","n":"Hollow Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Dead Bug Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bird Dog Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 45s","c":"","note":"","new":false}]}},{"p":3,"w":[17,24],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Continue progressing the distance from the wall.","new":false},{"b":"Plyo","n":"Single-Leg Pogo Hops","s":"2 × 10 e/s","c":"","note":"The bilateral pogo on one leg. Ankle only, tiny amplitude, no knee bend.","new":true},{"b":"Plyo","n":"Depth Drops","s":"2 × 5","c":"","note":"Step off the 12\" box, land, and stick it with no rebound. Eccentric absorption at speed.","new":true},{"b":"Plyo","n":"Bounding","s":"2 × 6 total","c":"","note":"Exaggerated running strides for distance, controlled single-leg landings. 3 per leg.","new":true},{"b":"Plyo","n":"Single-Leg Box Jumps","s":"2 × 4 e/s","c":"","note":"Single-leg takeoff onto a 12–16\" box, landing on both feet for joint protection.","new":true},{"b":"Plyo","n":"Seated Box Jumps","s":"carried","c":"","note":"Continue pure concentric starts; raise the box only when landings stay soft.","new":false},{"b":"Plyo","n":"Lateral Bounds (Stick)","s":"2 × 4 e/s","c":"","note":"Bound sideways and hold each landing two full seconds, knee over toes, hips level.","new":true},{"b":"Strength","n":"Pistol Squat Progressions","s":"2 × 8 e/s","c":"12 reps","note":"Full single-leg squat to a hamstring-on-calf depth. Use assistance initially.","new":true},{"b":"Strength","n":"Bulgarian Split Squats","s":"carried","c":"15 reps","note":"Continue under the tempo rule.","new":false},{"b":"Strength","n":"Cossack Squats","s":"carried","c":"15 reps","note":"Continue at full depth with smooth transitions.","new":false},{"b":"Strength","n":"Shrimp Squats","s":"carried","c":"12 reps","note":"Reduce assistance, control the eccentric.","new":false},{"b":"Strength","n":"Nordic Hamstring Curls","s":"2 × 5","c":"10 reps","note":"Eccentric focus; lower under control and use a band for assistance as needed.","new":true},{"b":"Strength","n":"Single-Leg RDL","s":"carried","c":"12 reps","note":"Continue; pair with the Nordic to cover both hamstring functions.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"carried","c":"15 reps","note":"Continue; single-leg slides are the progression once maxed.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"carried","c":"15 reps","note":"Continue; pause longer at lockout once the ceiling is reached.","new":false},{"b":"Strength","n":"High Step-Ups (Slow Eccentric)","s":"carried","c":"12 reps","note":"Continue; raise the box an inch before adding reps past the ceiling.","new":false},{"b":"Strength","n":"Horse Stance Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"carried","c":"20 reps","note":"Continue building lower-leg volume.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Superman","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Plank / Side Plank","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"L-Sit Hold","s":"carried","c":"40s","note":"Now held for time, shoulders depressed and arms locked.","new":false}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"","new":false},{"b":"Mobility","n":"Strength Side Cat Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Strength","n":"Archer Push-Ups","s":"2 × 10 e/s","c":"20 reps","note":"Full lateral shift, opposite arm kept straight. The peak unilateral push-up before one-arm work.","new":true},{"b":"Strength","n":"Decline Push-Ups","s":"carried","c":"20 reps","note":"Continue at the chosen elevation.","new":false},{"b":"Strength","n":"Shoulder Tap Push-Ups","s":"carried","c":"20 reps","note":"Continue progressing reps.","new":false},{"b":"Strength","n":"Pseudo Planche Push-Ups","s":"2 × 10","c":"20 reps","note":"Push-ups held in the pseudo-planche lean, hands by the hips, shoulder blades protracted.","new":true},{"b":"Strength","n":"Pull-Ups","s":"carried","c":"8 reps","note":"Continue building reps; aim for unassisted full reps.","new":false},{"b":"Strength","n":"Inverted Rows","s":"carried","c":"12 reps","note":"Continue; feet elevated once the flat-body version is owned.","new":false},{"b":"Strength","n":"Dips","s":"carried","c":"12 reps","note":"Continue progressing reps and depth.","new":false},{"b":"Core","n":"Hollow Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Hollow Body Rocks","s":"2 × 10","c":"20 reps","note":"Rock the whole body forward and back while holding the hollow shape.","new":true},{"b":"Core","n":"Dead Bug Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bird Dog Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 60s","c":"","note":"Full-range passive stretch to close the session.","new":false}]}},{"p":4,"w":[27,34],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Continue; dorsiflexion feeds every reactive landing below.","new":false},{"b":"Plyo","n":"Depth Jumps","s":"2 × 5","c":"","note":"Step off the 12\" box, land, and rebound straight up with minimal ground-contact time.","new":true},{"b":"Plyo","n":"Skater Bounds","s":"2 × 5 e/s","c":"","note":"The lateral bounds turn fast: explosive side to side, brief stick, immediate return.","new":true},{"b":"Plyo","n":"Single-Leg Pogo Hops","s":"carried","c":"","note":"Continue; the rhythm should be quicker and the hips quieter than in Phase 3.","new":false},{"b":"Plyo","n":"Bounding","s":"carried","c":"","note":"Continue exaggerated strides for distance with controlled landings.","new":false},{"b":"Plyo","n":"Pogo Hops for Height","s":"2 × 10","c":"","note":"The bilateral pogos now driven for maximal height, knees nearly straight, contact time minimal.","new":true},{"b":"Strength","n":"Pistol Squats","s":"carried","c":"12 reps","note":"Continue at full single-leg depth; the tempo rule applies.","new":false},{"b":"Strength","n":"Bulgarian Split Squats","s":"carried","c":"15 reps","note":"Continue under the tempo rule: 4s down, 2s pause.","new":false},{"b":"Strength","n":"Nordic Hamstring Curls","s":"carried","c":"10 reps","note":"Continue extending the eccentric range from the tested level.","new":false},{"b":"Strength","n":"Cossack Squats","s":"carried","c":"15 reps","note":"Continue at full depth with smooth transitions.","new":false},{"b":"Strength","n":"Single-Leg RDL","s":"carried","c":"12 reps","note":"Continue; slow the lowering phase once the ceiling is reached.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"carried","c":"15 reps","note":"Continue; progress to single-leg slides when maxed.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"carried","c":"15 reps","note":"Continue; extend the lockout pause once the ceiling is reached.","new":false},{"b":"Strength","n":"High Step-Ups (Slow Eccentric)","s":"carried","c":"12 reps","note":"Continue; a higher box beats more reps past the ceiling.","new":false},{"b":"Strength","n":"Horse Stance Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"carried","c":"20 reps","note":"Continue building lower-leg volume.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Superman","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Plank / Side Plank","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"L-Sit Hold","s":"carried","c":"40s","note":"","new":false}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"","new":false},{"b":"Mobility","n":"Wall Slides & Thoracic Opener","s":"2 × 60s","c":"","note":"Back to a wall, slide the arms overhead keeping wrists and lower back in contact.","new":true},{"b":"Skill","n":"Wall Handstand Hold","s":"2 × 20s","c":"40s","note":"Chest to wall. Stack the shoulders over the hands; build inverted endurance.","new":true},{"b":"Strength","n":"Shoulder Tap Push-Ups","s":"carried","c":"20 reps","note":"Continue; progress to a decline variation when maxed.","new":false},{"b":"Strength","n":"Pseudo Planche Push-Ups","s":"carried","c":"20 reps","note":"Continue building the forward-lean pressing strength.","new":false},{"b":"Strength","n":"Archer Push-Ups","s":"carried","c":"20 reps","note":"Continue toward one-arm work.","new":false},{"b":"Strength","n":"Pull-Ups","s":"carried","c":"8 reps","note":"Continue progressing reps; unassisted full reps by now.","new":false},{"b":"Strength","n":"Inverted Rows","s":"carried","c":"12 reps","note":"Continue; feet elevated, body level with the floor.","new":false},{"b":"Strength","n":"Dips","s":"carried","c":"12 reps","note":"Continue progressing reps and depth.","new":false},{"b":"Core","n":"Hollow Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Hollow Body Rocks","s":"carried","c":"20 reps","note":"Continue holding the rigid hollow shape.","new":false},{"b":"Core","n":"Dead Bug Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bird Dog Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 60s","c":"","note":"","new":false}]}},{"p":5,"w":[35,42],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Continue progressing the distance.","new":false},{"b":"Plyo","n":"Single-Leg Depth Drops","s":"2 × 4 e/s","c":"","note":"Step off the 12\" box; stick a silent single-leg landing with no hip shift.","new":true},{"b":"Plyo","n":"Continuous Box Jumps","s":"2 × 5","c":"","note":"Reactive, minimal pause between reps. Step down between each.","new":true},{"b":"Plyo","n":"Single-Leg Pogo Hops","s":"carried","c":"","note":"Continue at speed.","new":false},{"b":"Plyo","n":"Bounding","s":"carried","c":"","note":"Continue driving both up and out on each stride.","new":false},{"b":"Plyo","n":"Broad Jump → Vertical Chain","s":"2 × 3","c":"","note":"Broad jump out, land, and immediately convert into a maximal vertical jump.","new":true},{"b":"Strength","n":"Pistol Squats","s":"carried","c":"12 reps","note":"Continue at full depth under the tempo rule.","new":false},{"b":"Strength","n":"Shrimp Squats","s":"carried","c":"12 reps","note":"Continue toward freestanding reps.","new":false},{"b":"Strength","n":"Nordic Hamstring Curls","s":"carried","c":"10 reps","note":"Continue extending the eccentric range.","new":false},{"b":"Strength","n":"Cossack Squats","s":"carried","c":"15 reps","note":"Continue at full depth.","new":false},{"b":"Strength","n":"Single-Leg RDL","s":"carried","c":"12 reps","note":"Continue; this hinge stays for the rest of the year.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"carried","c":"15 reps","note":"Continue, single-leg where earned.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"carried","c":"15 reps","note":"Continue with an honest lockout squeeze.","new":false},{"b":"Strength","n":"Horse Stance Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"carried","c":"20 reps","note":"Continue building lower-leg volume.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Superman","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Plank / Side Plank","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"L-Sit to V-Sit Practice","s":"2 × 10s","c":"40s","note":"From a solid L-sit, press down and raise the straight legs above hip height.","new":true}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"","new":false},{"b":"Mobility","n":"Wall Slides & Thoracic Opener","s":"2 × 60s","c":"","note":"","new":false},{"b":"Skill","n":"Wall Handstand Push-Ups","s":"2 × 5","c":"10 reps","note":"Partial to full range against the wall; elbows tracking forward, hollow body held.","new":true},{"b":"Skill","n":"Tuck Planche Holds","s":"2 × 10s","c":"40s","note":"Knees tucked, hips at shoulder height, arms locked straight on parallettes.","new":true},{"b":"Strength","n":"One-Arm Push-Up Progression","s":"2 × 5 e/s","c":"10 reps","note":"Elevated or assisted single-arm pressing; build toward the 2×10 standard.","new":true},{"b":"Strength","n":"Pseudo Planche Push-Ups","s":"carried","c":"20 reps","note":"Continue from the tested level.","new":false},{"b":"Strength","n":"Pull-Ups","s":"carried","c":"8 reps","note":"Continue progressing toward the rep ceiling.","new":false},{"b":"Strength","n":"Inverted Rows","s":"carried","c":"12 reps","note":"Continue; add a pause at the top once the ceiling is owned.","new":false},{"b":"Strength","n":"Dips","s":"carried","c":"12 reps","note":"Continue progressing reps and depth.","new":false},{"b":"Core","n":"Hollow Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Hollow Body Rocks","s":"carried","c":"20 reps","note":"Continue from the tested level.","new":false},{"b":"Core","n":"Dead Bug Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bird Dog Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 60s","c":"","note":"","new":false}]}},{"p":6,"w":[43,50],"s":{"lower":[{"b":"Warm-up","n":"CARS Hip Rotations","s":"2 × 10 e/s","c":"","note":"","new":false},{"b":"Mobility","n":"GMB Frog Stretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Mobility","n":"Knee-to-Wall Ankle Rocks","s":"2 × 10 e/s","c":"","note":"Continue maintaining the range you built.","new":false},{"b":"Plyo","n":"Depth Jump to Box","s":"2 × 4","c":"","note":"Drop off the 12\" box, land, and immediately jump onto a second box.","new":true},{"b":"Plyo","n":"Single-Leg Bounding","s":"2 × 6 total","c":"","note":"Repeated single-leg hops for distance; absorb each landing fully. 3 per leg.","new":true},{"b":"Plyo","n":"Skater Bounds","s":"carried","c":"","note":"Continue with stable single-leg landings.","new":false},{"b":"Plyo","n":"Broad Jump → Vertical Chain","s":"carried","c":"","note":"Continue; the middle landing should now be instant and silent.","new":false},{"b":"Strength","n":"Pistol Squats","s":"carried","c":"12 reps","note":"Tempo rule: 3–4s down, pause, controlled press up.","new":false},{"b":"Strength","n":"Nordic Hamstring Curls","s":"carried","c":"10 reps","note":"Continue toward full-range eccentric control.","new":false},{"b":"Strength","n":"Shrimp Squats","s":"carried","c":"12 reps","note":"Freestanding if balance and strength allow.","new":false},{"b":"Strength","n":"Cossack Squats","s":"carried","c":"15 reps","note":"Full depth, smooth side-to-side transitions.","new":false},{"b":"Strength","n":"Single-Leg RDL","s":"carried","c":"12 reps","note":"Continue; the hinge holds its place to the final week.","new":false},{"b":"Strength","n":"Sliding Leg Curls","s":"carried","c":"15 reps","note":"Continue, single-leg where earned.","new":false},{"b":"Strength","n":"Single-Leg Hip Thrust","s":"carried","c":"15 reps","note":"Continue with the full lockout squeeze.","new":false},{"b":"Strength","n":"Horse Stance Hold","s":"carried","c":"40s","note":"Peak isometric endurance, spine vertical.","new":false},{"b":"Anatomy","n":"Toe / Front Toe Raises","s":"carried","c":"20 reps","note":"Continue building lower-leg volume.","new":false},{"b":"Core","n":"Glute Bridge Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Superman","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Plank / Side Plank","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Suitcase Carry Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"V-Sit Hold","s":"carried","c":"40s","note":"Now held for time, legs straight above hip height.","new":false}],"upper":[{"b":"Warm-up","n":"GMB Wrist/Shoulder Prep","s":"5–8 min","c":"","note":"","new":false},{"b":"Mobility","n":"Wall Slides & Thoracic Opener","s":"2 × 60s","c":"","note":"","new":false},{"b":"Skill","n":"Freestanding Handstand Practice","s":"8–10 min","c":"","note":"Kick-up attempts and balance holds away from the wall. Practice a safe exit first.","new":true},{"b":"Skill","n":"Advanced Tuck Planche Holds","s":"carried","c":"40s","note":"Knees drift from the chest, hips raised higher, arms locked.","new":false},{"b":"Strength","n":"Wall Handstand Push-Ups","s":"carried","c":"10 reps","note":"Continue at full range with a controlled descent.","new":false},{"b":"Strength","n":"One-Arm Push-Up","s":"carried","c":"10 reps","note":"Now a working set; full or near-full range, hips square.","new":false},{"b":"Strength","n":"Pull-Ups (Advanced)","s":"2 × 5","c":"8 reps","note":"Archer pull-ups or slow-tempo reps once bodyweight reps are owned; restart at two sets.","new":true},{"b":"Strength","n":"Inverted Rows","s":"carried","c":"12 reps","note":"Continue; single-arm or tempo variations once the ceiling is owned.","new":false},{"b":"Strength","n":"Dips","s":"carried","c":"12 reps","note":"Continue; slow the tempo once the rep ceiling is owned.","new":false},{"b":"Core","n":"Hollow Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Hollow Body Rocks","s":"carried","c":"20 reps","note":"Continue under fatigue.","new":false},{"b":"Core","n":"Dead Bug Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bird Dog Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Core","n":"Bear Crawl Hold","s":"carried","c":"40s","note":"","new":false},{"b":"Cooldown","n":"Lee Weiland Lat TriStretch","s":"2 × 60s","c":"","note":"","new":false},{"b":"Cooldown","n":"Hydration","s":"Minimum 3 liters of water daily Hydrated connective tissue is resilient connective tissue, and that tissue carries the demand this year","c":"","note":"","new":false},{"b":"Cooldown","n":"Deep Squat Rest","s":"Cumulative 2–5 minutes through the day The body's natural reset position; keeps the hips and ankles honest between sessions","c":"","note":"","new":false},{"b":"Cooldown","n":"Real Rest Days","s":"Days 2, 4, 6 and 8 stay training-free Recovery is where the adaptation happens","c":"","note":"Filling rest days is the quickest way to make the strength test start failing for no visible reason.","new":false}]}}];
+</script>
+<script>
+/* 52-Week Tracker — state, ladder, views */
+(function () {
+"use strict";
+
+/* ---------- storage (iOS-safe) ---------- */
+var KEY = "cal52.v1";
+var mem = null;
+function canStore() {
+  try { var k = "__t"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }
+  catch (e) { return false; }
+}
+var OK = canStore();
+function load() {
+  if (!OK) return mem;
+  try { var r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }
+  catch (e) { return null; }
+}
+function save() {
+  mem = S;
+  if (!OK) return;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { warnStore = "Storage is full or blocked. Export your data from the Data tab."; }
+}
+var warnStore = OK ? "" : "This browser is blocking local storage (Private Browsing?). Progress will be lost when you close the tab.";
+
+/* ---------- prescription parsing ---------- */
+function parseRx(s) {
+  if (!s || s === "carried") return null;
+  var m = /^(\d+)\s*×\s*(\d+)(s?)\s*(e\/s|total)?/.exec(s);
+  if (!m) return null;
+  return { sets: +m[1], val: +m[2], unit: m[3] === "s" ? "s" : "reps",
+           side: m[4] === "e/s", total: m[4] === "total" };
+}
+function parseCeil(c) { var m = /(\d+)/.exec(c || ""); return m ? +m[1] : 0; }
+var LADDER_BLOCKS = { Strength: 1, Anatomy: 1, Core: 1, Skill: 1 };
+function governed(e) { return !!LADDER_BLOCKS[e.b] && parseCeil(e.c) > 0; }
+function stepFor(name, unit) {
+  if (unit === "s") return 5;
+  if (/^Pull-Ups/.test(name)) return 1;
+  return 2;
+}
+
+
+/* exercises that change label between phases but continue the same ladder */
+var ALIAS = {
+  "Shrimp Squats": "Shrimp Squat Progressions",
+  "Pistol Squats": "Pistol Squat Progressions",
+  "L-Sit Hold": "L-Sit Practice",
+  "V-Sit Hold": "L-Sit to V-Sit Practice",
+  "Advanced Tuck Planche Holds": "Tuck Planche Holds",
+  "One-Arm Push-Up": "One-Arm Push-Up Progression"
+};
+function canon(n) { return ALIAS[n] || n; }
+
+/* ---------- build exercise index across all phases ---------- */
+var EX = {};        // name -> {seed, ceil, unit, side, total, block, note, phases:[]}
+PROGRAM.forEach(function (p) {
+  ["lower", "upper"].forEach(function (k) {
+    (p.s[k] || []).forEach(function (e) {
+      var cn = canon(e.n);
+      var rec = EX[cn] || (EX[cn] = { name: cn, block: e.b, note: "", ceil: 0, seed: null, phases: [] });
+      rec.phases.push(p.p);
+      if (e.note) rec.note = e.note;
+      var rx = parseRx(e.s);
+      if (rx && !rec.seed) { rec.seed = rx; }
+      var c = parseCeil(e.c);
+      if (c) rec.ceil = c;
+      if (governed(e)) rec.gov = true;
+      if (rx) { rec.unit = rx.unit; rec.side = rx.side; rec.total = rx.total; }
+    });
+  });
+});
+
+/* ---------- state ---------- */
+var S = load() || {
+  cycle: 1,
+  day: 1,
+  rx: {},          // name -> {sets, val, rest, maxed}
+  sess: {},        // "cycle-day" -> {done:{name:[bool]}, qual:{}, joint:null, at:null}
+  tests: [],       // {cycle, results:{name:'pass'|'hold'}, at}
+  checkins: [],    // {cycle, height, joint, mobility, at}
+  notes: ""
+};
+if (!S.rx) S.rx = {};
+save();
+
+function rxOf(name) {
+  name = canon(name);
+  var rec = EX[name];
+  if (!rec) return null;
+  if (!S.rx[name]) {
+    if (!rec.seed) return null;
+    S.rx[name] = { sets: rec.seed.sets, val: rec.seed.val, rest: 90, maxed: false };
+  }
+  return S.rx[name];
+}
+function rxText(e) {
+  var rec = EX[canon(e.n)];
+  if (!governed(e)) return e.s === "carried" ? "carried" : e.s;
+  var r = rxOf(e.n);
+  if (!r) return e.s;
+  var v = r.val + (rec.unit === "s" ? "s" : "");
+  return r.sets + " × " + v + (rec.side ? " e/s" : rec.total ? " total" : "");
+}
+
+/* ---------- ladder ---------- */
+function applyPass(name) {
+  name = canon(name);
+  var rec = EX[name], r = rxOf(name);
+  if (!rec || !r) return "—";
+  var step = stepFor(name, rec.unit), ceil = rec.ceil;
+  if (r.val < ceil) { r.val = Math.min(ceil, r.val + step); return "reps → " + r.val; }
+  if (r.sets < 4) { r.sets += 1; r.val = rec.seed.val; return "set added → " + r.sets + " × " + rec.seed.val; }
+  if (r.rest > 45) { r.rest -= 15; return "rest → " + r.rest + "s"; }
+  r.maxed = true;
+  return "maxed — progress to the harder variation, restart at 2 sets";
+}
+
+/* ---------- calendar ---------- */
+function weekOf(cycle) { return Math.floor(((cycle - 1) * 8) / 7) + 1; }
+function phaseFor(week) {
+  for (var i = 0; i < PROGRAM.length; i++) {
+    if (week >= PROGRAM[i].w[0] && week <= PROGRAM[i].w[1]) return PROGRAM[i];
+  }
+  return null;
+}
+function phaseLabel(week) {
+  var p = phaseFor(week);
+  if (p) return "Phase " + p.p;
+  if (week >= 25 && week <= 26) return "Deload & Mid-Year";
+  if (week >= 51) return "Deload & Annual";
+  if (week > 52) return "Program complete";
+  return "Transition";
+}
+function currentPhase() {
+  var w = weekOf(S.cycle), p = phaseFor(w);
+  if (p) return p;
+  // during deload/assessment weeks, show the phase just finished
+  for (var i = PROGRAM.length - 1; i >= 0; i--) if (PROGRAM[i].w[1] < w) return PROGRAM[i];
+  return PROGRAM[0];
+}
+var DAYS = [
+  { n: 1, t: "Lower", k: "lower" }, { n: 2, t: "Rest", k: null },
+  { n: 3, t: "Upper", k: "upper" }, { n: 4, t: "Rest", k: null },
+  { n: 5, t: "Lower", k: "lower" }, { n: 6, t: "Rest", k: null },
+  { n: 7, t: "Upper", k: "upper" }, { n: 8, t: "Rest", k: null }
+];
+function sessKey(c, d) { return c + "-" + d; }
+function sessOf(c, d) {
+  var k = sessKey(c, d);
+  if (!S.sess[k]) S.sess[k] = { done: {}, qual: {}, joint: null, at: null };
+  return S.sess[k];
+}
+function sessComplete(c, d) {
+  var s = S.sess[sessKey(c, d)];
+  return !!(s && s.at);
+}
+function testDue() { return S.cycle % 2 === 0 && !S.tests.some(function (t) { return t.cycle === S.cycle; }); }
+function checkinDue() { return !S.checkins.some(function (c) { return c.cycle === S.cycle; }); }
+
+/* ---------- rendering ---------- */
+var tab = "train";
+var view = document.getElementById("view");
+var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
+  return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+function renderHeader() {
+  var w = weekOf(S.cycle);
+  document.getElementById("meta").textContent =
+    "Cycle " + S.cycle + " · Week " + w + " · " + phaseLabel(w);
+  var d = document.getElementById("days");
+  d.innerHTML = DAYS.map(function (x) {
+    var cls = "day" + (x.n === S.day ? " on" : "") + (x.k ? "" : " rest") +
+              (x.k && sessComplete(S.cycle, x.n) ? " done" : "");
+    return '<div class="' + cls + '" data-d="' + x.n + '"><b>' + x.n + "</b>" + x.t + "</div>";
+  }).join("");
+}
+
+function trainView() {
+  var day = DAYS[S.day - 1], w = weekOf(S.cycle), h = "";
+  if (warnStore) h += '<div class="alert bad">' + esc(warnStore) + "</div>";
+
+  if (w >= 25 && w <= 26) h += deloadCard(25);
+  if (w >= 51) h += deloadCard(51);
+
+  if (!day.k) {
+    h += '<h2>Day ' + S.day + " — Rest</h2>";
+    h += '<p class="sub">Recovery is where the adaptation happens.</p>';
+    h += '<div class="card"><h3>What today is for</h3><p>Walk if you want to. Sit in a deep squat for two to five minutes across the day. Three liters of water, minimum. No mobility circuits, no "light" training.</p></div>';
+    if (S.day === 8) h += cycleEndCard();
+    h += advanceCard();
+    return h;
+  }
+
+  var p = currentPhase(), list = p.s[day.k] || [];
+  var s = sessOf(S.cycle, S.day);
+  h += "<h2>Day " + S.day + " — " + (day.k === "lower" ? "Lower Body: Legs & Plyometrics" : "Upper Body: Push, Pull & Dips") + "</h2>";
+  h += '<p class="sub">Phase ' + p.p + " · Week " + w + " · " + list.length + " entries</p>";
+
+  if (p.p === 6 && day.k === "lower") {
+    h += '<div class="alert">Skip <b>Depth Jump to Box</b> entirely if either Achilles or patellar tendon has been sore at any point in the previous phase. Single-leg bounding and skater bounds cover the same quality at a fraction of the risk.</div>';
+  }
+  if (p.p === 3 && day.k === "lower") {
+    h += '<div class="alert">Longest jump list of the macrocycle. Treat it as a menu: if landing quality drops partway through, stop the plyo block and go to the strength work.</div>';
+  }
+
+  var lastBlk = "";
+  list.forEach(function (e, i) {
+    if (e.b !== lastBlk) { h += '<div class="blk">' + esc(e.b) + "</div>"; lastBlk = e.b; }
+    h += exCard(e, i, s);
+  });
+
+  h += sessionFooter(s);
+  return h;
+}
+
+function exCard(e, i, s) {
+  var rx = rxText(e), rec = EX[canon(e.n)], gov = governed(e);
+  var r = gov ? rxOf(e.n) : null;
+  var sets = r ? r.sets : (parseRx(e.s) ? parseRx(e.s).sets : 2);
+  var marks = s.done[e.n] || [];
+  var allDone = marks.length >= sets && marks.slice(0, sets).every(Boolean);
+  var h = '<div class="ex' + (allDone ? " done" : "") + '" data-ex="' + esc(e.n) + '">';
+  h += '<div class="exhd"><div class="exn">' + esc(e.n) +
+       '<div class="rx">' + esc(rx) +
+       (r ? ' <small>· rest ' + r.rest + "s</small>" : "") +
+       (r && r.maxed ? ' <small class="hold">· maxed</small>' : "") +
+       "</div></div>";
+  if (e.new) h += '<div class="tag">new</div>';
+  h += "</div>";
+
+  h += '<div class="row"><div class="sets">';
+  for (var k = 0; k < sets; k++) {
+    h += '<button class="set' + (marks[k] ? " on" : "") + '" data-set="' + k + '">' + (k + 1) + "</button>";
+  }
+  h += "</div>";
+  if (e.note) h += '<button class="mini" data-note="1">Cue</button>';
+  h += "</div>";
+  if (e.note) h += '<div class="note">' + esc(e.note) + "</div>";
+
+  if (e.b === "Plyo") {
+    var q = s.qual[e.n] || "";
+    h += '<div class="qual">' +
+      ['silent|Silent', 'ok|Acceptable', 'noisy|Noisy'].map(function (o) {
+        var v = o.split("|");
+        return '<button data-q="' + v[0] + '"' + (q === v[0] ? ' class="on"' : "") + ">" + v[1] + "</button>";
+      }).join("") + "</div>";
+    if (q === "noisy") h += '<div class="alert bad">Landing quality failed. End this exercise for today, and halve the plyo block next session.</div>';
+  }
+  return h + "</div>";
+}
+
+function sessionFooter(s) {
+  var h = '<div class="card"><h3>Joint check</h3><p>Elbows and knees pain-free right now? At 55 this outranks every number above.</p><div class="yn" id="joint">' +
+    ['yes|Pain-free', 'no|Something hurts'].map(function (o) {
+      var v = o.split("|");
+      return '<button data-j="' + v[0] + '"' + (s.joint === v[0] ? ' class="on"' : "") + ">" + v[1] + "</button>";
+    }).join("") + "</div>";
+  if (s.joint === "no") h += '<div class="alert bad">Drop volume on the offending pattern by twenty to thirty percent until it settles, then rebuild. A joint trained through pain costs months on this frame.</div>';
+  h += '<button class="btn wide" id="finish">' + (s.at ? "Session logged ✓ — tap to reopen" : "Finish session") + "</button></div>";
+  return h;
+}
+
+function deloadCard(kind) {
+  return '<div class="alert">' + (kind === 25
+    ? "<b>Deload and mid-year assessment.</b> Week 25: halve every set and rep, keep rest generous. Week 26: run the assessment, one session per training day."
+    : "<b>Deload and annual assessment.</b> Week 51: halve every set and rep, skill work light and brief. Week 52: run the full assessment and compare against Week 26.") +
+    " Warm the jumps up through the full progression, take three attempts at most, and stop testing a jump the moment one lands badly.</div>";
+}
+
+function cycleEndCard() {
+  if (!checkinDue()) {
+    var c = S.checkins.filter(function (x) { return x.cycle === S.cycle; })[0];
+    return '<div class="card"><h3>Cycle check-in ✓</h3><p>Height ' + c.height + " · Joints " + c.joint + " · Deep squat " + c.mobility + "</p></div>";
+  }
+  var q = [["height", "Do you feel taller and less compressed than at the start of the cycle?"],
+           ["joint", "Elbows and knees pain-free?"],
+           ["mobility", "Can you sit in a deep squat for two minutes with no support?"]];
+  return '<div class="card" id="checkin"><h3>Cycle check-in</h3><p>These outrank any number on the training page.</p>' +
+    q.map(function (x) {
+      return "<p style='color:var(--ink);margin:14px 0 0'>" + x[1] + '</p><div class="yn" data-q="' + x[0] + '">' +
+        '<button data-v="yes">Yes</button><button data-v="no">No</button></div>';
+    }).join("") + '<button class="btn wide" id="saveCheckin">Save check-in</button></div>';
+}
+
+function advanceCard() {
+  var h = '<div class="card"><h3>Cycle ' + S.cycle + "</h3>";
+  if (testDue()) h += '<p class="hold">Strength test is due at the end of this cycle. Run it from the Test tab before advancing.</p>';
+  else h += "<p>Advance when the eighth day is finished.</p>";
+  h += '<button class="btn wide" id="nextCycle">Start cycle ' + (S.cycle + 1) + "</button></div>";
+  return h;
+}
+
+/* ---------- strength test ---------- */
+function testView() {
+  var h = "<h2>Strength test</h2>";
+  h += '<p class="sub">Runs at the end of every second complete cycle. Judge each exercise on its own.</p>';
+  var prior = S.tests.filter(function (t) { return t.cycle === S.cycle; })[0];
+  if (prior) {
+    h += '<div class="alert good">Test already run for cycle ' + S.cycle + ". Results below; the ladder has been applied.</div>";
+    h += '<div class="card">' + Object.keys(prior.results).map(function (n) {
+      return '<div class="lg"><b>' + esc(n) + "</b> — " + (prior.results[n] === "pass"
+        ? '<span class="pass">passed</span>' : '<span class="hold">held</span>') +
+        (prior.moves && prior.moves[n] ? " · " + esc(prior.moves[n]) : "") + "</div>";
+    }).join("") + "</div>";
+    return h;
+  }
+  if (S.cycle % 2 !== 0) h += '<div class="alert">Cycle ' + S.cycle + " is odd-numbered. The test is not due until cycle " + (S.cycle + 1) + ". You can still run it early if you want to.</div>";
+  h += '<div class="card"><p>Did you complete every prescribed set, at the prescribed reps or hold time, with one or two clean reps still in reserve on the final set and no breakdown in form — in <b>both</b> of this cycle\'s sessions for that exercise?</p></div>';
+
+  var p = currentPhase(), seen = {}, rows = [];
+  ["lower", "upper"].forEach(function (k) {
+    (p.s[k] || []).forEach(function (e) {
+      if (!governed(e) || seen[e.n]) return;
+      seen[e.n] = 1; rows.push(e);
+    });
+  });
+  var lastBlk = "";
+  rows.forEach(function (e) {
+    if (e.b !== lastBlk) { h += '<div class="blk">' + esc(e.b) + "</div>"; lastBlk = e.b; }
+    var r = rxOf(e.n);
+    h += '<div class="ex" data-test="' + esc(e.n) + '"><div class="exhd"><div class="exn">' + esc(e.n) +
+      '<div class="rx">' + esc(rxText(e)) + " <small>· ceiling " + esc(e.c) + "</small></div></div></div>" +
+      '<div class="yn"><button data-r="pass">Passed</button><button data-r="hold">Held</button></div></div>';
+  });
+  h += '<button class="btn wide" id="runTest">Apply results to the ladder</button>';
+  return h;
+}
+
+/* ---------- log ---------- */
+function logView() {
+  var h = "<h2>Log</h2>";
+  var keys = Object.keys(S.sess).filter(function (k) { return S.sess[k].at; })
+    .sort(function (a, b) { return S.sess[b].at - S.sess[a].at; });
+  h += '<p class="sub">' + keys.length + " sessions logged · " + S.tests.length + " tests · " + S.checkins.length + " check-ins</p>";
+  h += '<div class="card"><h3>Current prescriptions</h3><table class="hist">';
+  Object.keys(S.rx).sort().forEach(function (n) {
+    var r = S.rx[n], rec = EX[n] || {};
+    h += "<tr><td>" + esc(n) + "</td><td>" + r.sets + " × " + r.val + (rec.unit === "s" ? "s" : "") +
+      " · " + r.rest + "s" + (r.maxed ? " · maxed" : "") + "</td></tr>";
+  });
+  h += "</table></div>";
+  if (!keys.length) return h + '<div class="card"><p>No sessions logged yet.</p></div>';
+  h += '<div class="card"><h3>Sessions</h3><table class="hist">';
+  keys.slice(0, 60).forEach(function (k) {
+    var s = S.sess[k], parts = k.split("-"), d = DAYS[+parts[1] - 1];
+    var noisy = Object.keys(s.qual).filter(function (x) { return s.qual[x] === "noisy"; }).length;
+    h += "<tr><td><b>Cycle " + parts[0] + ", Day " + parts[1] + "</b> — " + d.t +
+      (s.joint === "no" ? ' <span class="hold">· joint flag</span>' : "") +
+      (noisy ? ' <span class="hold">· ' + noisy + " noisy landing" + (noisy > 1 ? "s" : "") + "</span>" : "") +
+      "</td><td>" + new Date(s.at).toLocaleDateString() + "</td></tr>";
+  });
+  h += "</table></div>";
+  return h;
+}
+
+/* ---------- data ---------- */
+function dataView() {
+  var h = "<h2>Data</h2>";
+  h += '<p class="sub">Everything lives in this browser. Export before clearing Safari data, changing devices, or reinstalling.</p>';
+  h += '<div class="card"><h3>Export</h3><p>Copy this, or use the button to download a file.</p><textarea id="dump" readonly>' +
+    esc(JSON.stringify(S)) + "</textarea>" +
+    '<button class="btn wide" id="download">Download backup</button></div>';
+  h += '<div class="card"><h3>Import</h3><p>Paste a backup and replace everything currently stored.</p><textarea id="inbox" placeholder="Paste backup JSON"></textarea>' +
+    '<button class="btn wide ghost" id="import">Replace stored data</button></div>';
+  h += '<div class="card"><h3>Set position</h3><p>Move the tracker to a different cycle if you are picking up mid-program.</p>' +
+    '<div class="stepper"><button id="cMinus">−</button><span>Cycle ' + S.cycle + "</span><button id=\"cPlus\">+</button></div></div>";
+  h += '<div class="card"><h3>Reset</h3><p>Clears every session, test, check-in and prescription. There is no undo.</p>' +
+    '<button class="btn wide ghost" id="reset">Erase everything</button></div>';
+  return h;
+}
+
+/* ---------- paint + events ---------- */
+function paint() {
+  renderHeader();
+  view.innerHTML = tab === "train" ? trainView() : tab === "test" ? testView() :
+                   tab === "log" ? logView() : dataView();
+  window.scrollTo(0, 0);
+}
+
+document.getElementById("days").addEventListener("click", function (ev) {
+  var d = ev.target.closest("[data-d]"); if (!d) return;
+  S.day = +d.getAttribute("data-d"); tab = "train";
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.classList.toggle("on", b.getAttribute("data-t") === "train"); });
+  save(); paint();
+});
+
+document.querySelector("nav").addEventListener("click", function (ev) {
+  var b = ev.target.closest("[data-t]"); if (!b) return;
+  tab = b.getAttribute("data-t");
+  document.querySelectorAll("nav button").forEach(function (x) { x.classList.toggle("on", x === b); });
+  paint();
+});
+
+view.addEventListener("click", function (ev) {
+  var t = ev.target, card = t.closest(".ex"), s = sessOf(S.cycle, S.day);
+
+  if (t.matches("[data-set]") && card) {
+    var n = card.getAttribute("data-ex"), i = +t.getAttribute("data-set");
+    var arr = s.done[n] || (s.done[n] = []);
+    arr[i] = !arr[i]; save(); paint(); return;
+  }
+  if (t.matches("[data-note]") && card) {
+    card.querySelector(".note").classList.toggle("show");
+    t.classList.toggle("on"); return;
+  }
+  if (t.matches("[data-q]") && card && card.hasAttribute("data-ex")) {
+    var nm = card.getAttribute("data-ex"), v = t.getAttribute("data-q");
+    s.qual[nm] = s.qual[nm] === v ? "" : v; save(); paint(); return;
+  }
+  if (t.matches("[data-j]")) {
+    var jv = t.getAttribute("data-j");
+    s.joint = s.joint === jv ? null : jv; save(); paint(); return;
+  }
+  if (t.id === "finish") {
+    s.at = s.at ? null : Date.now(); save(); paint(); return;
+  }
+  if (t.matches("#checkin [data-v]")) {
+    var grp = t.closest("[data-q]");
+    grp.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === t); });
+    return;
+  }
+  if (t.id === "saveCheckin") {
+    var box = document.getElementById("checkin"), rec = { cycle: S.cycle, at: Date.now() };
+    box.querySelectorAll("[data-q]").forEach(function (g) {
+      var on = g.querySelector("button.on");
+      rec[g.getAttribute("data-q")] = on ? on.getAttribute("data-v") : "—";
+    });
+    S.checkins.push(rec); save(); paint(); return;
+  }
+  if (t.id === "nextCycle") {
+    S.cycle += 1; S.day = 1; save(); paint(); return;
+  }
+  if (t.matches("[data-r]")) {
+    var row = t.closest(".ex");
+    row.querySelectorAll("[data-r]").forEach(function (b) { b.classList.toggle("on", b === t); });
+    return;
+  }
+  if (t.id === "runTest") {
+    var res = {}, moves = {};
+    document.querySelectorAll("[data-test]").forEach(function (row) {
+      var nm2 = row.getAttribute("data-test"), on = row.querySelector("[data-r].on");
+      if (!on) return;
+      var v2 = on.getAttribute("data-r");
+      res[nm2] = v2;
+      moves[nm2] = v2 === "pass" ? applyPass(nm2) : "held for two more cycles";
+    });
+    if (!Object.keys(res).length) { alert("Mark at least one exercise passed or held."); return; }
+    S.tests.push({ cycle: S.cycle, results: res, moves: moves, at: Date.now() });
+    save(); paint(); return;
+  }
+  if (t.id === "download") {
+    var blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "calisthenics-tracker-cycle" + S.cycle + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    return;
+  }
+  if (t.id === "import") {
+    var raw = document.getElementById("inbox").value.trim();
+    if (!raw) return;
+    try {
+      var obj = JSON.parse(raw);
+      if (typeof obj.cycle !== "number" || !obj.rx) throw new Error("shape");
+      S = obj; if (!S.sess) S.sess = {}; if (!S.tests) S.tests = [];
+      if (!S.checkins) S.checkins = []; save(); paint();
+    } catch (e) { alert("That does not look like a tracker backup."); }
+    return;
+  }
+  if (t.id === "cMinus") { if (S.cycle > 1) S.cycle -= 1; save(); paint(); return; }
+  if (t.id === "cPlus") { S.cycle += 1; save(); paint(); return; }
+  if (t.id === "reset") {
+    if (!confirm("Erase every session, test, check-in and prescription?")) return;
+    S = { cycle: 1, day: 1, rx: {}, sess: {}, tests: [], checkins: [], notes: "" };
+    save(); paint(); return;
+  }
+});
+
+paint();
+})();
+
+</script>
+</body>
+</html>
